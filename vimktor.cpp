@@ -197,6 +197,8 @@ VimktorErr_t Vimktor::HandleCommands() {
 
   nodelay(m_window, 0);
   while (1) {
+    HelperLog(":" + cmd);
+    wrefresh(m_window);
     ch = wgetch(m_window);
     if (ch == KEY_ESCAPE || ch == 13 || ch == KEY_ENTER) {
       nodelay(m_window, 1);
@@ -204,9 +206,13 @@ VimktorErr_t Vimktor::HandleCommands() {
       break;
       wrefresh(stdscr);
     }
-    cmd.push_back(ch);
-    HelperLog(cmd);
-    wrefresh(m_window);
+    if (ch == KEY_BACKSPACE) {
+      if (cmd.size() > 0)
+        cmd.pop_back();
+
+    } else {
+      cmd.push_back(ch);
+    }
   }
   nodelay(m_window, 0);
 

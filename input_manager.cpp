@@ -100,6 +100,8 @@ VimktorEvent_t InputManager::GetInputInsert(WINDOW *win) {
 VimktorEvent_t InputManager::GetInputNormal(WINDOW *win) {
 
   VimktorEvent_t event = EV_NONE;
+  if (inputCh > '1' && inputCh < '9') {
+  }
   switch (inputCh) {
   case KEY_UP:
     return EV_CURSOR_UP;
