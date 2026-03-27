@@ -327,6 +327,7 @@ VimktorErr_t Sequence::CursorMoveWordNext() {
     CursorMoveSol();
     return VIMKTOR_OK;
   }
+  return VIMKTOR_OK;
 }
 
 VimktorErr_t Sequence::CursorManagePagePos() {

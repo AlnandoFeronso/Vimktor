@@ -226,7 +226,7 @@ VimktorErr_t Vimktor::HandleCommands() {
   return VIMKTOR_OK;
 }
 
-VimktorErr_t Vimktor::OpenEmpty() { LoadFile(".vimktor_temp"); }
+VimktorErr_t Vimktor::OpenEmpty() { LoadFile(".vimktor_temp"); return VIMKTOR_OK;}
 
 VimktorErr_t Vimktor::LoadFile(const std::string &fileName) {
   if (fileName == ".") {
@@ -305,6 +305,7 @@ std::string Vimktor::GetModeStr() const {
     return "Normal";
   if (m_mode == VimktorMode_t::VISUAL)
     return "Visual";
+  return "INVALID";
 }
 
 VimktorErr_t Vimktor::ExplorePath() {
@@ -312,6 +313,7 @@ VimktorErr_t Vimktor::ExplorePath() {
   m_mode = FILES;
   HelperLog(std::filesystem::current_path().string());
   m_sequence.LoadCurrentDirectory();
+  return VIMKTOR_OK;
 }
 
 VimktorErr_t Vimktor::ExplorePath(const std::string &path_str) {
@@ -320,6 +322,7 @@ VimktorErr_t Vimktor::ExplorePath(const std::string &path_str) {
   std::filesystem::current_path(path_str);
   HelperLog(std::filesystem::current_path().string());
   m_sequence.LoadCurrentDirectory();
+  return VIMKTOR_OK;
 }
 
 VimktorErr_t Vimktor::OpenFileCursor() {
@@ -334,4 +337,5 @@ VimktorErr_t Vimktor::OpenFileCursor() {
     LoadFile(m_sequence.GetStringCursor());
     m_mode = NORMAL;
   }
+  return VIMKTOR_OK;
 }

@@ -89,12 +89,16 @@ VimktorEvent_t InputManager::GetInputInsert(WINDOW *win) {
   case KEY_BACKSPACE:
     return EV_BACKSPACE;
     break;
+  case KEY_ENTER_VIMKTOR:
+    return EV_NEW_LINE;
+    break;
   case 0:
     break;
   default:
     return EV_INSERT_TEXT;
     break;
   }
+  return EV_NONE;
 };
 
 VimktorEvent_t InputManager::GetInputNormal(WINDOW *win) {
