@@ -1,7 +1,9 @@
+#include "colab.h"
 #include "common.h"
 #include "curses.h"
 #include "input_manager.h"
 #include "sequence.h"
+#include "window.h"
 #include <cstdint>
 #include <expected>
 #include <fstream>
@@ -10,51 +12,35 @@
 #include <unordered_map>
 
 class Vimktor {
-  // methods
 public:
   typedef std::unordered_map<std::string, VimktorEvent_t> CommandList_t;
 
-  Vimktor() : m_window(stdscr), m_mode(NORMAL) {}
-  Vimktor(WINDOW *window, std::fstream &file)
-      : m_window(window), m_mode(NORMAL) {}
+  Vimktor() : m_mode(NORMAL) {}
+  Vimktor( std::fstream &file)
+      : m_mode(NORMAL) {}
 
   inline Vimktor(std::string &fileName) { LoadFile(fileName); }
 
   void Init();
   void End();
   void Loop();
+
   // private:
-  VimktorErr_t OpenEmpty();
-  VimktorErr_t LoadFile(const std::string &fileName);
-  VimktorErr_t WriteFile(const std::string &fileName);
-  VimktorErr_t WriteFile();
-  VimktorErr_t InitCurses();
 
   // renderer
-  VimktorErr_t RenderLineNumber();
   VimktorErr_t RenderWindow();
-  VimktorErr_t RenderHelper();
-  void HelperLog(const std::string &msg);
-  VimktorErr_t RenderCursor();
-  VimktorErr_t RenderText(uint16_t x, uint16_t y, uint16_t width,
-                          uint16_t height);
-  position_t GetEditorDimensions();
-  VimktorErr_t GetInput();
-
-  VimktorErr_t HandleEvents(VimktorEvent_t event);
-  VimktorErr_t HandleCommands();
-
-  std::string GetModeStr() const;
-
   // file exploring
-  VimktorErr_t ExplorePath();
-  VimktorErr_t ExplorePath(const std::string &path_str);
-  VimktorErr_t OpenFileCursor();
 
+  // colaboration
+  VimktorErr_t InitCollab();
+  VimktorErr_t EndCollab();
+  VimktorErr_t ShowCollabUsers();
+  VimktorErr_t ShowCollabSettings();
+  CollabSession_t m_session;
   // variables
-  WINDOW *m_window;
-  Sequence m_sequence;
+
   VimktorMode_t m_mode;
+  std::vector<std::unique_ptr<Window>> m_windows;
 
 private:
   static CommandList_t commandList;

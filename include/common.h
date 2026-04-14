@@ -89,4 +89,5 @@ enum VimktorEvent_t {
   EV_GO_TO_NEXT_WORD,
   EV_FILE_EXPLORER,
   EV_ENTER_CURSOR_DIRECTORY,
+  EV_COLAB,
 };

@@ -294,6 +294,7 @@ Vimktor::CommandList_t Vimktor::commandList = {
     {"w", EV_SAVE_FILE},
     {"Explore", EV_FILE_EXPLORER},
     {"q", EV_CLOSE},
+    {"Colab", EV_COLAB},
 };
 
 std::string Vimktor::GetModeStr() const {
