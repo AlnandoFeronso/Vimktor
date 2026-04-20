@@ -6,6 +6,11 @@
 #define DEBUG_MODE 1
 #define COLOR 1
 
+// TODO: create config system for now definitions should be here
+
+const uint8_t HELPER_HEIGHT = 2;
+const uint8_t LINE_NUM_WIDTH = 4;
+// TODO: Macro checking, something like ESP_ERR_CECK :)
 enum VimktorErr_t {
   VIMKTOR_OK,
   MEMORY_ERROR,
@@ -90,4 +95,6 @@ enum VimktorEvent_t {
   EV_FILE_EXPLORER,
   EV_ENTER_CURSOR_DIRECTORY,
   EV_COLAB,
+  EV_NEW_WINDOW_HORIZONTAL,
+  EV_NEW_WINDOW_VERTICAL,
 };

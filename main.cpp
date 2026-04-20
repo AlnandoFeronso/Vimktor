@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
   if (argc > 1) {
     std::string fileName;
     fileName = argv[1];
-    app.LoadFile(fileName);
+    // app.LoadFile(fileName);
   }
   app.Init();
   app.Loop();

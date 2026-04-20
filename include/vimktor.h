@@ -16,20 +16,23 @@ public:
   typedef std::unordered_map<std::string, VimktorEvent_t> CommandList_t;
 
   Vimktor() : m_mode(NORMAL) {}
-  Vimktor( std::fstream &file)
-      : m_mode(NORMAL) {}
+  Vimktor(const std::fstream &file) : m_mode(NORMAL) {}
 
-  inline Vimktor(std::string &fileName) { LoadFile(fileName); }
+  Vimktor(const std::string &fileName) {
+    AddWindow(std::make_unique<ExploreWindow>());
+  }
 
   void Init();
   void End();
   void Loop();
 
+  VimktorErr_t InitCurses();
+  VimktorErr_t HandleEvents();
   // private:
-
-  // renderer
+  VimktorErr_t AddWindow(std::unique_ptr<Window> &&win);
+  VimktorErr_t NewWindowVertical(std::unique_ptr<Window> && win);
+  VimktorErr_t NewWindowHorizontal(std::unique_ptr<Window> && win); // renderer
   VimktorErr_t RenderWindow();
-  // file exploring
 
   // colaboration
   VimktorErr_t InitCollab();
@@ -41,6 +44,8 @@ public:
 
   VimktorMode_t m_mode;
   std::vector<std::unique_ptr<Window>> m_windows;
+  std::vector<std::unique_ptr<Window>>::iterator m_current_window =
+      m_windows.end();
 
 private:
   static CommandList_t commandList;
