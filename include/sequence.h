@@ -63,6 +63,11 @@ public:
 
   void AddGlyphAt(size_t col, size_t line, glyph_t glyph);
 
+  inline void SetPageDimensions(const position_t &pos) {
+    m_pageWidth = pos.x;
+    m_pageHeight = pos.y;
+  }
+
   inline void SetPageDimensions(size_t pageWidth, size_t pageHeight) {
     m_pageWidth = pageWidth;
     m_pageHeight = pageHeight;
@@ -134,8 +139,6 @@ private:
   std::vector<std::vector<glyph_t>> data;
 };
 
-
-
 class SequenceCollab {
 public:
   SequenceCollab() = default;
@@ -153,6 +156,11 @@ public:
                 size_t line); // relative , you dont need to consider pageOffset
 
   void AddGlyphAt(size_t col, size_t line, glyph_t glyph);
+
+  inline void SetPageDimensions(const position_t &pos) {
+    m_pageWidth = pos.x;
+    m_pageHeight = pos.y;
+  }
 
   inline void SetPageDimensions(size_t pageWidth, size_t pageHeight) {
     m_pageWidth = pageWidth;

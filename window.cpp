@@ -2,6 +2,24 @@
 #include "include/common.h"
 #include "include/vimktor_debug.h"
 #include <cstdint>
+#include <filesystem>
+
+std::string Window::GetFileName() const { return "None"; }
+
+Window::~Window() {}
+
+VimktorErr_t Window::Render() {
+  const auto txtDim = m_sequence->GetPageDimensions();
+  if (txtDim.x == 0 || txtDim.y == 0)
+    return MEMORY_ERROR;
+
+  RenderText(LINE_NUM_WIDTH, 0, txtDim.x, txtDim.y);
+  RenderLineNumber();
+  RenderHelper();
+  RenderCursor();
+  wrefresh(m_window);
+  return VIMKTOR_OK;
+}
 
 VimktorErr_t Window::RenderText(uint16_t x, uint16_t y, uint16_t width,
                                 uint16_t height) {
@@ -98,4 +116,42 @@ std::string Window::GetModeStr() const {
 ExploreWindow::ExploreWindow(Window *parent, const size_t width,
                              const size_t height) {}
 ExploreWindow::ExploreWindow(const size_t width, const size_t height) {}
-ExploreWindow::ExploreWindow() {}
+
+ExploreWindow::ExploreWindow() {
+  m_sequence->SetPageDimensions(GetWindowDimensions());
+  ExplorePath();
+  Render();
+}
+
+VimktorErr_t ExploreWindow::ExplorePath() {
+  m_sequence->m_cursorPos = position_t(0, 0);
+  m_mode = FILES;
+  HelperLog(std::filesystem::current_path().string());
+  m_sequence->LoadCurrentDirectory();
+  return VIMKTOR_OK;
+}
+
+VimktorEvent_t ExploreWindow::HandleInput() {
+  // TODO: Implement input handling
+  return EV_NONE;
+}
+
+VimktorErr_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
+  // TODO: Implement event handling
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t ExploreWindow::HandleCommands() {
+  // TODO: Implement command handling
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t ExploreWindow::ExplorePath(const std::string &path_str) {
+  // TODO: Implement path string exploration
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t ExploreWindow::OpenFileCursor() {
+  // TODO: Implement open file cursor
+  return VIMKTOR_OK;
+}

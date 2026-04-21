@@ -17,7 +17,8 @@ void Vimktor::Init() {
   InitCurses();
   int w, h;
   getmaxyx(stdscr, h, w);
-  m_windows.push_back(std::make_unique<ExploreWindow>(w, h));
+  m_windows.push_back(std::make_unique<ExploreWindow>());
+  m_current_window = m_windows.begin(); 
 }
 
 void Vimktor::End() { endwin(); }
@@ -227,7 +228,6 @@ void Vimktor::Loop() {
   while (m_mode != EXIT) {
     RenderWindow();
     HandleEvents();
-    m_sequence.m_mode = m_mode;
   }
 }
 //

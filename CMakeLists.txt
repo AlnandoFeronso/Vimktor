@@ -11,6 +11,7 @@ find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
 
 target_link_libraries(Vimktor ${CURSES_LIBRARIES})
+set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall -g")
 
 
 target_include_directories(Vimktor PUBLIC

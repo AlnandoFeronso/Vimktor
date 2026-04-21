@@ -6,7 +6,9 @@
 #include <memory>
 class Window {
 public:
-  Window() : m_window(stdscr), m_position(position_t(0, 0)) {}
+  Window()
+      : m_window(stdscr), m_position(position_t(0, 0)),
+        m_sequence(std::make_unique<Sequence>()) {}
   virtual ~Window();
   virtual VimktorErr_t Render();
 
@@ -29,7 +31,7 @@ public:
   VimktorErr_t RenderLineNumber();          // DONE
   void HelperLog(const std::string &msg);   // DONE
 
-  std::string GetFileName() const;
+  virtual std::string GetFileName() const;
   std::string GetModeStr() const;
   VimktorEvent_t GetCurrentEvent() const { return m_current_event; };
   virtual VimktorEvent_t HandleInput() = 0;
@@ -43,10 +45,10 @@ public:
 
 class ExploreWindow : public Window {
 public:
+  ExploreWindow();
   ExploreWindow(Window *parent, const size_t width, const size_t height);
   ExploreWindow(const size_t width, const size_t height);
-  ExploreWindow();
-  ~ExploreWindow();
+  virtual ~ExploreWindow() = default;
   virtual VimktorEvent_t HandleInput() override;
   virtual VimktorErr_t HandleEvents(VimktorEvent_t event) override;
   virtual VimktorErr_t HandleCommands() override;
