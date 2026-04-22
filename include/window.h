@@ -41,6 +41,9 @@ public:
   virtual VimktorErr_t ExplorePath() = 0;
   virtual VimktorErr_t ExplorePath(const std::string &path_str) = 0;
   virtual VimktorErr_t OpenFileCursor() = 0;
+  virtual VimktorErr_t LoadFile(const std::string &fileName) = 0;
+  virtual VimktorErr_t WriteFile(const std::string &fileName) = 0;
+  virtual VimktorErr_t WriteFile() = 0;
 };
 
 class ExploreWindow : public Window {
@@ -52,7 +55,9 @@ public:
   virtual VimktorEvent_t HandleInput() override;
   virtual VimktorErr_t HandleEvents(VimktorEvent_t event) override;
   virtual VimktorErr_t HandleCommands() override;
-
+  virtual VimktorErr_t LoadFile(const std::string &fileName) override;
+  virtual VimktorErr_t WriteFile(const std::string &fileName) override;
+  virtual VimktorErr_t WriteFile() override;
   virtual VimktorErr_t ExplorePath() override;
   virtual VimktorErr_t ExplorePath(const std::string &path_str) override;
   virtual VimktorErr_t OpenFileCursor() override;
@@ -67,9 +72,6 @@ public:
   EditorWindow(const std::string &fileName);
   EditorWindow();
   VimktorErr_t Render() override;
-  VimktorErr_t LoadFile(const std::string &fileName);
-  VimktorErr_t WriteFile(const std::string &fileName);
-  VimktorErr_t WriteFile();
 
 public:
   VimktorErr_t RenderLineNumber();

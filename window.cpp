@@ -1,5 +1,6 @@
 #include "include/window.h"
 #include "include/common.h"
+#include "include/input_manager.h"
 #include "include/vimktor_debug.h"
 #include <cstdint>
 #include <filesystem>
@@ -119,6 +120,7 @@ ExploreWindow::ExploreWindow(const size_t width, const size_t height) {}
 
 ExploreWindow::ExploreWindow() {
   m_sequence->SetPageDimensions(GetWindowDimensions());
+  m_mode = FILES;
   ExplorePath();
   Render();
 }
@@ -132,12 +134,79 @@ VimktorErr_t ExploreWindow::ExplorePath() {
 }
 
 VimktorEvent_t ExploreWindow::HandleInput() {
-  // TODO: Implement input handling
-  return EV_NONE;
+  VimktorEvent_t event = InputManager::Get().GetEvent(m_window, m_mode);
+  HandleEvents(event);
+  return event;
 }
 
 VimktorErr_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
-  // TODO: Implement event handling
+  VimktorErr_t err = VIMKTOR_OK;
+  switch (event) {
+  case EV_NONE:
+    break;
+  case EV_CURSOR_DOWN:
+    err = m_sequence->CursorMove(DOWN);
+    break;
+  case EV_CURSOR_UP:
+    err = m_sequence->CursorMove(UP);
+    break;
+  case EV_CURSOR_RIGHT:
+    err = m_sequence->CursorMove(RIGHT);
+    break;
+  case EV_CURSOR_LEFT:
+    err = m_sequence->CursorMove(LEFT);
+    break;
+  case EV_CLOSE:
+    m_mode = EXIT;
+    break;
+  case EV_ERASE_LINE:
+    m_sequence->EraseLineCursor();
+    break;
+  case EV_MODE_NORMAL:
+    m_mode = NORMAL;
+    break;
+  case EV_MODE_INSERT:
+    m_mode = INSERT;
+    break;
+  case EV_MODE_INSERT_RIGHT:
+    m_mode = INSERT;
+    m_sequence->m_mode = m_mode;
+    m_sequence->CursorMove(RIGHT);
+    break;
+  case EV_BACKSPACE:
+    m_sequence->EraseCharCursor();
+    break;
+  case EV_INSERT_TEXT: {
+    glyph_t gl = glyph_t(InputManager::Get().GetChar());
+    m_sequence->InsertCharCursor(gl);
+  } break;
+  case EV_GO_TO_SOL:
+    m_sequence->CursorMoveSol();
+    break;
+  case EV_GO_TO_NEXT_WORD:
+    m_sequence->CursorMoveWordNext();
+    break;
+  case EV_GO_TO_EOL:
+    m_sequence->CursorMoveEol();
+    break;
+  case EV_SAVE_FILE:
+    WriteFile();
+    HelperLog("saved to " + GetFileName());
+    break;
+  case EV_NEW_LINE:
+    m_sequence->AddNewLineCursor();
+    break;
+  case EV_GET_COMMAND:
+    HandleCommands();
+    break;
+  case EV_FILE_EXPLORER:
+    WriteFile();
+    ExplorePath();
+    break;
+  case EV_ENTER_CURSOR_DIRECTORY:
+    OpenFileCursor();
+    break;
+  }
   return VIMKTOR_OK;
 }
 

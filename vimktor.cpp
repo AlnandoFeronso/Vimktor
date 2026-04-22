@@ -213,8 +213,7 @@ VimktorErr_t Vimktor::RenderWindow() {
 
 VimktorErr_t Vimktor::HandleEvents() {
 
-  m_current_window->get()->HandleInput();
-  auto ev = m_current_window->get()->GetCurrentEvent();
+  auto ev = m_current_window->get()->HandleInput();
   if (ev == EV_NONE)
     return VIMKTOR_OK;
   switch (ev) {
