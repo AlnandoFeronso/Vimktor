@@ -11,17 +11,46 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <ncurses.h>
 #include <string>
 
 void Vimktor::Init() {
   InitCurses();
   int w, h;
   getmaxyx(stdscr, h, w);
-  m_windows.push_back(std::make_unique<ExploreWindow>());
-  m_current_window = m_windows.begin(); 
+  m_windows.insert(std::make_unique<ExploreWindow>());
+  m_current_window = m_windows.begin();
 }
 
-void Vimktor::End() { endwin(); }
+void Vimktor::End() {
+  m_mode = EXIT;
+  endwin();
+}
+
+VimktorErr_t Vimktor::NewWindowHorizontal(std::unique_ptr<Window> &&win) {
+  // set position
+  auto pos_prev = m_current_window->get()->GetWindowPosition();
+  pos_prev.x++; // trick to assure that widow will be right next
+  win.get()->SetWindowPosition(pos_prev);
+
+  size_t align = 0;
+  auto new_win = m_windows.insert(std::move(win)).first;
+
+  size_t num_of_windows = m_windows.size();
+  size_t new_width = getmaxx(stdscr) / num_of_windows;
+  if (new_width * num_of_windows < getmaxx(stdscr))
+    align = getmaxx(stdscr) - new_width * num_of_windows;
+
+  position_t temp(0, 0);
+  for (auto &el : m_windows) {
+    el->MoveX(pos_prev.x);
+    el.get()->ChangeWidth(new_width);
+    //    el->MoveAndResize({}, {});
+    pos_prev.x += new_width;
+  }
+
+  return VIMKTOR_OK;
+}
 
 VimktorErr_t Vimktor::InitCurses() {
   initscr();
@@ -38,7 +67,7 @@ VimktorErr_t Vimktor::InitCurses() {
 
 VimktorErr_t Vimktor::AddWindow(std::unique_ptr<Window> &&win) {
   if (m_windows.empty())
-    m_windows.push_back(std::move(win));
+    m_windows.insert(std::move(win));
   return VIMKTOR_OK;
 }
 
@@ -218,13 +247,34 @@ VimktorErr_t Vimktor::HandleEvents() {
     return VIMKTOR_OK;
   switch (ev) {
   case EV_NEW_WINDOW_HORIZONTAL:
+
+    break;
+  case EV_CLOSE:
+    Debug::Log(std::format(" NIE WIEM {}", m_windows.size()));
+    CloseCurrentWindow();
+    break;
   default:
     return VIMKTOR_OK;
   }
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t Vimktor::CloseCurrentWindow() {
+  if (m_current_window == m_windows.end())
+    return MEMORY_ERROR;
+  m_current_window = m_windows.erase(m_current_window);
+  Debug::Log(std::format(" NIE WIEM {}", m_windows.size()));
+  if (m_current_window == m_windows.end() || m_windows.size() == 0) {
+    End();
+    return VimktorErr_t::EOL_ERROR;
+  }
+
+  return VIMKTOR_OK;
 }
 
 void Vimktor::Loop() {
   while (m_mode != EXIT) {
+    m_current_window->get()->HelperLog("AAAAAAAA POMOCY");
     RenderWindow();
     HandleEvents();
   }

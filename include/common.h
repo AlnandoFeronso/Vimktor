@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <inttypes.h>
 #include <string>
+#include <unordered_map>
 #define DEBUG_MODE 1
 #define COLOR 1
 
@@ -97,4 +98,13 @@ enum VimktorEvent_t {
   EV_COLAB,
   EV_NEW_WINDOW_HORIZONTAL,
   EV_NEW_WINDOW_VERTICAL,
+};
+
+typedef std::unordered_map<std::string, VimktorEvent_t> CommandList_t;
+const CommandList_t commandList = {
+    {"w", EV_SAVE_FILE},
+    {"Explore", EV_FILE_EXPLORER},
+    {"q", EV_CLOSE},
+    {"ala", EV_NEW_WINDOW_HORIZONTAL},
+    {"Colab", EV_COLAB},
 };

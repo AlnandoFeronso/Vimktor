@@ -4,6 +4,7 @@
 #include "include/vimktor_debug.h"
 #include <cstdint>
 #include <filesystem>
+#include <ncurses.h>
 
 std::string Window::GetFileName() const { return "None"; }
 
@@ -14,13 +15,16 @@ VimktorErr_t Window::Render() {
   if (txtDim.x == 0 || txtDim.y == 0)
     return MEMORY_ERROR;
 
-  RenderText(LINE_NUM_WIDTH, 0, txtDim.x, txtDim.y);
+  RenderText(LINE_NUM_WIDTH, 0, txtDim.x, txtDim.y - HELPER_HEIGHT);
   RenderLineNumber();
   RenderHelper();
   RenderCursor();
   wrefresh(m_window);
   return VIMKTOR_OK;
 }
+
+void Window::SetWindowPosition(const position_t& pos) { m_position = pos; }
+position_t Window::GetWindowPosition() { return m_position; }
 
 VimktorErr_t Window::RenderText(uint16_t x, uint16_t y, uint16_t width,
                                 uint16_t height) {
@@ -75,7 +79,7 @@ WINDOW *Window::SplitHorizontal() {
 
 VimktorErr_t Window::RenderLineNumber() {
   size_t first_nr = m_sequence->m_pagePos.y;
-  size_t height = m_sequence->GetPageDimensions().y;
+  size_t height = m_sequence->GetPageDimensions().y - HELPER_HEIGHT;
   for (uint y = 0; y < height; y++) {
     if (first_nr + y >= m_sequence->Size()) {
 
@@ -101,6 +105,7 @@ void Window::HelperLog(const std::string &msg) {
   wmove(m_window, y, x);
   clrtoeol();
   mvwprintw(m_window, y, x, "%s", msg.c_str());
+  wrefresh(m_window);
 }
 std::string Window::GetModeStr() const {
   if (m_mode == VimktorMode_t::FILES)
@@ -111,6 +116,8 @@ std::string Window::GetModeStr() const {
     return "Normal";
   if (m_mode == VimktorMode_t::VISUAL)
     return "Visual";
+  if (m_mode == VimktorMode_t::EXIT)
+    return "EXIT !!!!!! ";
   return "INVALID";
 }
 
@@ -135,26 +142,26 @@ VimktorErr_t ExploreWindow::ExplorePath() {
 
 VimktorEvent_t ExploreWindow::HandleInput() {
   VimktorEvent_t event = InputManager::Get().GetEvent(m_window, m_mode);
-  HandleEvents(event);
+  event = HandleEvents(event);
+
   return event;
 }
 
-VimktorErr_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
-  VimktorErr_t err = VIMKTOR_OK;
+VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
   switch (event) {
   case EV_NONE:
     break;
   case EV_CURSOR_DOWN:
-    err = m_sequence->CursorMove(DOWN);
+    m_sequence->CursorMove(DOWN);
     break;
   case EV_CURSOR_UP:
-    err = m_sequence->CursorMove(UP);
+    m_sequence->CursorMove(UP);
     break;
   case EV_CURSOR_RIGHT:
-    err = m_sequence->CursorMove(RIGHT);
+    m_sequence->CursorMove(RIGHT);
     break;
   case EV_CURSOR_LEFT:
-    err = m_sequence->CursorMove(LEFT);
+    m_sequence->CursorMove(LEFT);
     break;
   case EV_CLOSE:
     m_mode = EXIT;
@@ -197,7 +204,7 @@ VimktorErr_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
     m_sequence->AddNewLineCursor();
     break;
   case EV_GET_COMMAND:
-    HandleCommands();
+    event = HandleCommands();
     break;
   case EV_FILE_EXPLORER:
     WriteFile();
@@ -207,12 +214,51 @@ VimktorErr_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
     OpenFileCursor();
     break;
   }
+  return event;
+}
+VimktorErr_t ExploreWindow::WriteFile() { return VIMKTOR_OK; }
+VimktorErr_t ExploreWindow::LoadFile(const std::string &fileName) {
   return VIMKTOR_OK;
 }
-
-VimktorErr_t ExploreWindow::HandleCommands() {
-  // TODO: Implement command handling
+VimktorErr_t ExploreWindow::WriteFile(const std::string &fileName) {
   return VIMKTOR_OK;
+}
+VimktorEvent_t Window::HandleCommands() {
+  std::string cmd;
+
+  char16_t ch;
+  VimktorEvent_t event = EV_NONE;
+  nodelay(m_window, 0);
+  while (1) {
+    HelperLog(":" + cmd);
+    wrefresh(m_window);
+    ch = wgetch(m_window);
+    if (ch == KEY_ESCAPE || ch == 13 || ch == KEY_ENTER) {
+      nodelay(m_window, 1);
+      // ch = wgetch(m_window);
+      break;
+      wrefresh(stdscr);
+    }
+    if (ch == KEY_BACKSPACE) {
+      if (cmd.size() > 0)
+        cmd.pop_back();
+
+    } else {
+      cmd.push_back(ch);
+    }
+  }
+  nodelay(m_window, 0);
+
+  // nodelay(m_window, 1);
+
+  HelperLog("                                           ");
+
+  wrefresh(stdscr);
+  if (commandList.contains(cmd)) {
+    Debug::Log("COMAND: " + cmd);
+    event = HandleEvents(commandList.at(cmd));
+  }
+  return event;
 }
 
 VimktorErr_t ExploreWindow::ExplorePath(const std::string &path_str) {
@@ -221,6 +267,16 @@ VimktorErr_t ExploreWindow::ExplorePath(const std::string &path_str) {
 }
 
 VimktorErr_t ExploreWindow::OpenFileCursor() {
-  // TODO: Implement open file cursor
+  auto path = std::filesystem::current_path();
+
+  std::string path_str = path.string() + '/' + m_sequence->GetStringCursor();
+  if (std::filesystem::is_directory(path_str) ||
+      m_sequence->GetStringCursor() == "../" ||
+      m_sequence->GetStringCursor() == "./") {
+    ExplorePath(path_str);
+  } else {
+    LoadFile(m_sequence->GetStringCursor());
+    m_mode = NORMAL;
+  }
   return VIMKTOR_OK;
 }

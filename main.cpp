@@ -12,5 +12,5 @@ int main(int argc, char **argv) {
   }
   app.Init();
   app.Loop();
-  app.End();
+  // app.End();
 }

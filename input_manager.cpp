@@ -30,6 +30,11 @@ VimktorEvent_t InputManager::GetInputFileExp(WINDOW *win) {
 
   VimktorEvent_t event = EV_NONE;
   switch (inputCh) {
+
+  case 'q':
+    // TODO: DELETE THIS CASE ONLY FOR TESTS
+    event = EV_CLOSE;
+    break;
   case 'h':
     event = EV_CURSOR_LEFT;
     break;

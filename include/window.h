@@ -11,7 +11,14 @@ public:
         m_sequence(std::make_unique<Sequence>()) {}
   virtual ~Window();
   virtual VimktorErr_t Render();
-
+  //TODO: ALL RESIZES ETC
+  VimktorErr_t MoveAndResize(const position_t &pos, const position_t &dim);
+  VimktorErr_t Move(position_t);
+  VimktorErr_t MoveX(const size_t x);
+  VimktorErr_t MoveY(const size_t y);
+  VimktorErr_t Resize(position_t dim);
+  VimktorErr_t ChangeWidth(size_t x);
+  VimktorErr_t ChangeHeigth(size_t y);
   // private:
   //  fields
   WINDOW *m_window = nullptr;
@@ -22,21 +29,23 @@ public:
   WINDOW *getWindow() const { return m_window; }
 
   VimktorErr_t RenderText(uint16_t x, uint16_t y, uint16_t width,
-                          uint16_t height); // DONE
-  position_t GetWindowDimensions();         // DONE
-  VimktorErr_t RenderHelper();              // DONE
-  WINDOW *SplitHorizontal();                // TODO: AFTER VIMKTOR CREATION
-  WINDOW *SplitVertical();                  // DONE
-  VimktorErr_t RenderCursor();              // DONE
-  VimktorErr_t RenderLineNumber();          // DONE
-  void HelperLog(const std::string &msg);   // DONE
+                          uint16_t height);      // DONE
+  void SetWindowPosition(const position_t &pos); // DONE
+  position_t GetWindowPosition();                // DONE
+  position_t GetWindowDimensions();              // DONE
+  VimktorErr_t RenderHelper();                   // DONE
+  WINDOW *SplitHorizontal();                     // TODO: AFTER VIMKTOR CREATION
+  WINDOW *SplitVertical();                       // DONE
+  VimktorErr_t RenderCursor();                   // DONE
+  VimktorErr_t RenderLineNumber();               // DONE
+  void HelperLog(const std::string &msg);        // DONE
 
   virtual std::string GetFileName() const;
   std::string GetModeStr() const;
   VimktorEvent_t GetCurrentEvent() const { return m_current_event; };
   virtual VimktorEvent_t HandleInput() = 0;
-  virtual VimktorErr_t HandleEvents(VimktorEvent_t event) = 0;
-  virtual VimktorErr_t HandleCommands() = 0;
+  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) = 0;
+  virtual VimktorEvent_t HandleCommands();
 
   virtual VimktorErr_t ExplorePath() = 0;
   virtual VimktorErr_t ExplorePath(const std::string &path_str) = 0;
@@ -53,8 +62,7 @@ public:
   ExploreWindow(const size_t width, const size_t height);
   virtual ~ExploreWindow() = default;
   virtual VimktorEvent_t HandleInput() override;
-  virtual VimktorErr_t HandleEvents(VimktorEvent_t event) override;
-  virtual VimktorErr_t HandleCommands() override;
+  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) override;
   virtual VimktorErr_t LoadFile(const std::string &fileName) override;
   virtual VimktorErr_t WriteFile(const std::string &fileName) override;
   virtual VimktorErr_t WriteFile() override;

@@ -8,8 +8,20 @@
 #include <expected>
 #include <fstream>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <unordered_map>
+
+auto compare_windows = [](const std::unique_ptr<Window> &p1,
+                          const std::unique_ptr<Window> &p2) -> int {
+  if (p2->GetWindowPosition().x != p1->GetWindowPosition().x) {
+    return p2->GetWindowPosition().x < p1->GetWindowPosition().x;
+  }
+
+  return p2->GetWindowPosition().y < p1->GetWindowPosition().y;
+};
+typedef std::set<std::unique_ptr<Window>, decltype(compare_windows)>
+    WindowSet_t;
 
 class Vimktor {
 public:
@@ -30,8 +42,9 @@ public:
   VimktorErr_t HandleEvents();
   // private:
   VimktorErr_t AddWindow(std::unique_ptr<Window> &&win);
-  VimktorErr_t NewWindowVertical(std::unique_ptr<Window> && win);
-  VimktorErr_t NewWindowHorizontal(std::unique_ptr<Window> && win); // renderer
+  VimktorErr_t CloseCurrentWindow();
+  VimktorErr_t NewWindowVertical(std::unique_ptr<Window> &&win);
+  VimktorErr_t NewWindowHorizontal(std::unique_ptr<Window> &&win); // renderer
   VimktorErr_t RenderWindow();
 
   // colaboration
@@ -43,9 +56,8 @@ public:
   // variables
 
   VimktorMode_t m_mode;
-  std::vector<std::unique_ptr<Window>> m_windows;
-  std::vector<std::unique_ptr<Window>>::iterator m_current_window =
-      m_windows.end();
+  WindowSet_t m_windows;
+  WindowSet_t::iterator m_current_window = m_windows.end();
 
 private:
   static CommandList_t commandList;
