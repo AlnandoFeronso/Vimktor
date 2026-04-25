@@ -3,6 +3,8 @@
 #include "include/input_manager.h"
 #include "include/sequence.h"
 #include "include/vimktor_debug.h"
+#include "include/window.h"
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -18,7 +20,7 @@ void Vimktor::Init() {
   InitCurses();
   int w, h;
   getmaxyx(stdscr, h, w);
-  m_windows.insert(std::make_unique<ExploreWindow>());
+  m_windows.push_back(std::make_unique<ExploreWindow>());
   m_current_window = m_windows.begin();
 }
 
@@ -33,22 +35,41 @@ VimktorErr_t Vimktor::NewWindowHorizontal(std::unique_ptr<Window> &&win) {
   pos_prev.x++; // trick to assure that widow will be right next
   win.get()->SetWindowPosition(pos_prev);
 
+  auto ptr = win.get();
+
   size_t align = 0;
-  auto new_win = m_windows.insert(std::move(win)).first;
+  m_windows.push_back(std::move(win));
 
   size_t num_of_windows = m_windows.size();
   size_t new_width = getmaxx(stdscr) / num_of_windows;
   if (new_width * num_of_windows < getmaxx(stdscr))
     align = getmaxx(stdscr) - new_width * num_of_windows;
 
+  // sort windows by position from left to right
+  auto compare_windows = [](const std::unique_ptr<Window> &p1,
+                            const std::unique_ptr<Window> &p2) -> bool {
+    if (p2->GetWindowPosition().x != p1->GetWindowPosition().x) {
+      return p2->GetWindowPosition().x < p1->GetWindowPosition().x;
+    }
+
+    return p2->GetWindowPosition().y < p1->GetWindowPosition().y;
+  };
+
+  std::sort(m_windows.begin(), m_windows.end(), compare_windows);
+
   position_t temp(0, 0);
   for (auto &el : m_windows) {
     el->MoveX(pos_prev.x);
     el.get()->ChangeWidth(new_width);
+    el.get()->Render();
     //    el->MoveAndResize({}, {});
     pos_prev.x += new_width;
   }
 
+  for (auto start = m_windows.begin(); start != m_windows.end(); start++) {
+    if (start->get() == ptr)
+      m_current_window = start;
+  }
   return VIMKTOR_OK;
 }
 
@@ -67,7 +88,26 @@ VimktorErr_t Vimktor::InitCurses() {
 
 VimktorErr_t Vimktor::AddWindow(std::unique_ptr<Window> &&win) {
   if (m_windows.empty())
-    m_windows.insert(std::move(win));
+    m_windows.push_back(std::move(win));
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t Vimktor::ChangeWindowRight() {
+  if (m_current_window + 1 != m_windows.end()) {
+    m_current_window++;
+  } else {
+    return MEMORY_ERROR;
+  }
+  return VIMKTOR_OK;
+}
+VimktorErr_t Vimktor::ChangeWindowLeft() {
+
+  if (m_current_window != m_windows.begin()) {
+    m_current_window--;
+  } else {
+    return MEMORY_ERROR;
+  }
+
   return VIMKTOR_OK;
 }
 
@@ -243,11 +283,18 @@ VimktorErr_t Vimktor::RenderWindow() {
 VimktorErr_t Vimktor::HandleEvents() {
 
   auto ev = m_current_window->get()->HandleInput();
+  m_current_window->get()->HelperLog(VimktorEventToString(ev));
   if (ev == EV_NONE)
     return VIMKTOR_OK;
   switch (ev) {
+  case EV_CHANGE_WINDOW_RIGHT:
+    ChangeWindowRight();
+    break;
+  case EV_CHANGE_WINDOW_LEFT:
+    ChangeWindowLeft();
+    break;
   case EV_NEW_WINDOW_HORIZONTAL:
-
+    NewWindowHorizontal(std::make_unique<ExploreWindow>());
     break;
   case EV_CLOSE:
     Debug::Log(std::format(" NIE WIEM {}", m_windows.size()));
@@ -274,7 +321,6 @@ VimktorErr_t Vimktor::CloseCurrentWindow() {
 
 void Vimktor::Loop() {
   while (m_mode != EXIT) {
-    m_current_window->get()->HelperLog("AAAAAAAA POMOCY");
     RenderWindow();
     HandleEvents();
   }

@@ -1,3 +1,4 @@
+#pragma once
 #include "colab.h"
 #include "common.h"
 #include "curses.h"
@@ -12,16 +13,7 @@
 #include <tuple>
 #include <unordered_map>
 
-auto compare_windows = [](const std::unique_ptr<Window> &p1,
-                          const std::unique_ptr<Window> &p2) -> int {
-  if (p2->GetWindowPosition().x != p1->GetWindowPosition().x) {
-    return p2->GetWindowPosition().x < p1->GetWindowPosition().x;
-  }
 
-  return p2->GetWindowPosition().y < p1->GetWindowPosition().y;
-};
-typedef std::set<std::unique_ptr<Window>, decltype(compare_windows)>
-    WindowSet_t;
 
 class Vimktor {
 public:
@@ -46,6 +38,8 @@ public:
   VimktorErr_t NewWindowVertical(std::unique_ptr<Window> &&win);
   VimktorErr_t NewWindowHorizontal(std::unique_ptr<Window> &&win); // renderer
   VimktorErr_t RenderWindow();
+  VimktorErr_t ChangeWindowRight();
+  VimktorErr_t ChangeWindowLeft();
 
   // colaboration
   VimktorErr_t InitCollab();
@@ -56,8 +50,9 @@ public:
   // variables
 
   VimktorMode_t m_mode;
-  WindowSet_t m_windows;
-  WindowSet_t::iterator m_current_window = m_windows.end();
+  std::vector<std::unique_ptr<Window>> m_windows;
+  std::vector<std::unique_ptr<Window>>::iterator m_current_window =
+      m_windows.end();
 
 private:
   static CommandList_t commandList;

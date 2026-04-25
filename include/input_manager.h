@@ -5,6 +5,7 @@
 
 #define KEY_ESCAPE 27 // in ncurses ESC and R_ALT have same int value
 #define KEY_ENTER_VIMKTOR 13
+#define KEY_CTRL(k) ((k) & 0x1f)
 class InputManager {
 public:
   static InputManager &Get() {

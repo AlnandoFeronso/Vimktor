@@ -4,21 +4,25 @@
 #include "curses.h"
 #include "sequence.h"
 #include <memory>
+#include <string_view>
 class Window {
 public:
   Window()
       : m_window(stdscr), m_position(position_t(0, 0)),
-        m_sequence(std::make_unique<Sequence>()) {}
+        m_sequence(std::make_unique<Sequence>()) {
+		m_sequence->SetPageDimensions(getmaxx(stdscr)-LINE_NUM_WIDTH,getmaxy(stdscr)-HELPER_HEIGHT);
+	}
   virtual ~Window();
   virtual VimktorErr_t Render();
-  //TODO: ALL RESIZES ETC
+  // TODO: ALL RESIZES ETC
   VimktorErr_t MoveAndResize(const position_t &pos, const position_t &dim);
-  VimktorErr_t Move(position_t);
+  VimktorErr_t Move(const position_t &pos);
   VimktorErr_t MoveX(const size_t x);
   VimktorErr_t MoveY(const size_t y);
-  VimktorErr_t Resize(position_t dim);
+  VimktorErr_t Resize();
+  VimktorErr_t Resize(const position_t &pos);
   VimktorErr_t ChangeWidth(size_t x);
-  VimktorErr_t ChangeHeigth(size_t y);
+  VimktorErr_t ChangeHeight(size_t y);
   // private:
   //  fields
   WINDOW *m_window = nullptr;
@@ -26,6 +30,7 @@ public:
   position_t m_position;
   VimktorMode_t m_mode = NORMAL;
   VimktorEvent_t m_current_event = EV_NONE;
+  std::string m_filename;
   WINDOW *getWindow() const { return m_window; }
 
   VimktorErr_t RenderText(uint16_t x, uint16_t y, uint16_t width,
@@ -38,7 +43,8 @@ public:
   WINDOW *SplitVertical();                       // DONE
   VimktorErr_t RenderCursor();                   // DONE
   VimktorErr_t RenderLineNumber();               // DONE
-  void HelperLog(const std::string &msg);        // DONE
+  //  void HelperLog(const std::string &msg);        // DONE
+  void HelperLog(std::string_view msg); // DONE
 
   virtual std::string GetFileName() const;
   std::string GetModeStr() const;
@@ -46,6 +52,7 @@ public:
   virtual VimktorEvent_t HandleInput() = 0;
   virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) = 0;
   virtual VimktorEvent_t HandleCommands();
+  virtual VimktorEvent_t HandleWindowMenu();
 
   virtual VimktorErr_t ExplorePath() = 0;
   virtual VimktorErr_t ExplorePath(const std::string &path_str) = 0;

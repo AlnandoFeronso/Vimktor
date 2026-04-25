@@ -29,8 +29,11 @@ VimktorEvent_t InputManager::GetEvent(WINDOW *win, VimktorMode_t mode) {
 VimktorEvent_t InputManager::GetInputFileExp(WINDOW *win) {
 
   VimktorEvent_t event = EV_NONE;
-  switch (inputCh) {
+  if (inputCh == KEY_CTRL('w')) {
+    return EV_CHANGE_WINDOW_MENU;
+  }
 
+  switch (inputCh) {
   case 'q':
     // TODO: DELETE THIS CASE ONLY FOR TESTS
     event = EV_CLOSE;
@@ -107,6 +110,9 @@ VimktorEvent_t InputManager::GetInputInsert(WINDOW *win) {
 };
 
 VimktorEvent_t InputManager::GetInputNormal(WINDOW *win) {
+  if (inputCh == KEY_CTRL('w')) {
+    return EV_CHANGE_WINDOW_MENU;
+  }
 
   VimktorEvent_t event = EV_NONE;
   if (inputCh > '1' && inputCh < '9') {

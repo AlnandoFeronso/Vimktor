@@ -3,8 +3,10 @@
 #include "include/input_manager.h"
 #include "include/vimktor_debug.h"
 #include <cstdint>
+#include <curses.h>
 #include <filesystem>
 #include <ncurses.h>
+#include <string>
 
 std::string Window::GetFileName() const { return "None"; }
 
@@ -15,7 +17,7 @@ VimktorErr_t Window::Render() {
   if (txtDim.x == 0 || txtDim.y == 0)
     return MEMORY_ERROR;
 
-  RenderText(LINE_NUM_WIDTH, 0, txtDim.x, txtDim.y - HELPER_HEIGHT);
+  RenderText(LINE_NUM_WIDTH, 0, txtDim.x, txtDim.y);
   RenderLineNumber();
   RenderHelper();
   RenderCursor();
@@ -23,18 +25,18 @@ VimktorErr_t Window::Render() {
   return VIMKTOR_OK;
 }
 
-void Window::SetWindowPosition(const position_t& pos) { m_position = pos; }
+void Window::SetWindowPosition(const position_t &pos) { m_position = pos; }
 position_t Window::GetWindowPosition() { return m_position; }
 
 VimktorErr_t Window::RenderText(uint16_t x, uint16_t y, uint16_t width,
                                 uint16_t height) {
 
-  for (uint16_t i_y = y; i_y < height; i_y++) {
-    for (uint16_t i_x = x; i_x < width; i_x++) {
+  for (uint16_t i_y = 0; i_y < height; i_y++) {
+    for (uint16_t i_x = 0; i_x < width; i_x++) {
 
-      wmove(m_window, i_y, i_x);
-      if (m_sequence->GetGlyphAtRel(i_x - x, i_y).has_value()) {
-        const auto *temp = m_sequence->GetGlyphAtRel(i_x - x, i_y).value();
+      wmove(m_window, i_y + y, i_x + x);
+      if (m_sequence->GetGlyphAtRel(i_x, i_y).has_value()) {
+        const auto *temp = m_sequence->GetGlyphAtRel(i_x, i_y).value();
         waddch(m_window, temp->ch);
       } else {
         waddch(m_window, ' ');
@@ -46,6 +48,52 @@ VimktorErr_t Window::RenderText(uint16_t x, uint16_t y, uint16_t width,
 
 position_t Window::GetWindowDimensions() {
   return position_t(getmaxx(m_window), getmaxy(m_window));
+}
+VimktorErr_t Window::MoveAndResize(const position_t &pos,
+                                   const position_t &dim) {
+  m_position = pos;
+  Resize(dim);
+  return VIMKTOR_OK;
+}
+VimktorErr_t Window::Move(const position_t &pos) { Resize(pos); }
+VimktorErr_t Window::ChangeWidth(size_t x) {
+  size_t y = getmaxy(m_window);
+  position_t dim(x, y);
+  Resize(dim);
+  return VIMKTOR_OK;
+}
+VimktorErr_t Window::ChangeHeight(size_t y) {
+  size_t x = getmaxx(m_window);
+  position_t dim(x, y);
+  Resize(dim);
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t Window::MoveX(size_t x) {
+  m_position.x = x;
+  Resize();
+  return VIMKTOR_OK;
+}
+VimktorErr_t Window::MoveY(size_t y) {
+  m_position.y = y;
+  Resize();
+  return VIMKTOR_OK;
+}
+VimktorErr_t Window::Resize() {
+  int x = getmaxx(m_window);
+  int y = getmaxy(m_window);
+  if (m_window != stdscr) {
+    delwin(m_window);
+  }
+  m_window = newwin(y, x, m_position.y, m_position.x);
+  return VIMKTOR_OK;
+}
+VimktorErr_t Window::Resize(const position_t &dim) {
+  if (m_window != stdscr) {
+    delwin(m_window);
+  }
+  m_window = newwin(dim.y, dim.x, m_position.y, m_position.x);
+  return VIMKTOR_OK;
 }
 
 VimktorErr_t Window::RenderHelper() {
@@ -79,7 +127,7 @@ WINDOW *Window::SplitHorizontal() {
 
 VimktorErr_t Window::RenderLineNumber() {
   size_t first_nr = m_sequence->m_pagePos.y;
-  size_t height = m_sequence->GetPageDimensions().y - HELPER_HEIGHT;
+  size_t height = m_sequence->GetPageDimensions().y;
   for (uint y = 0; y < height; y++) {
     if (first_nr + y >= m_sequence->Size()) {
 
@@ -97,16 +145,25 @@ VimktorErr_t Window::RenderCursor() {
 
   return VIMKTOR_OK;
 }
-
-void Window::HelperLog(const std::string &msg) {
+void Window::HelperLog(std::string_view msg) {
   position_t endPoint = GetWindowDimensions();
   size_t y = endPoint.y - 1;
   size_t x = 0;
   wmove(m_window, y, x);
   clrtoeol();
-  mvwprintw(m_window, y, x, "%s", msg.c_str());
+  mvwprintw(m_window, y, x, "%s", msg.data());
   wrefresh(m_window);
 }
+
+// void Window::HelperLog(const std::string &msg) {
+//   position_t endPoint = GetWindowDimensions();
+//   size_t y = endPoint.y - 1;
+//   size_t x = 0;
+//   wmove(m_window, y, x);
+//   clrtoeol();
+//   mvwprintw(m_window, y, x, "%s", msg.c_str());
+//   wrefresh(m_window);
+// }
 std::string Window::GetModeStr() const {
   if (m_mode == VimktorMode_t::FILES)
     return "Files";
@@ -126,7 +183,8 @@ ExploreWindow::ExploreWindow(Window *parent, const size_t width,
 ExploreWindow::ExploreWindow(const size_t width, const size_t height) {}
 
 ExploreWindow::ExploreWindow() {
-  m_sequence->SetPageDimensions(GetWindowDimensions());
+  auto dim = GetWindowDimensions();
+  m_sequence->SetPageDimensions(dim.x - LINE_NUM_WIDTH, dim.y - HELPER_HEIGHT);
   m_mode = FILES;
   ExplorePath();
   Render();
@@ -172,6 +230,7 @@ VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
   case EV_MODE_NORMAL:
     m_mode = NORMAL;
     break;
+  
   case EV_MODE_INSERT:
     m_mode = INSERT;
     break;
@@ -206,6 +265,9 @@ VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
   case EV_GET_COMMAND:
     event = HandleCommands();
     break;
+  case EV_CHANGE_WINDOW_MENU:
+    event = HandleWindowMenu();
+    break;
   case EV_FILE_EXPLORER:
     WriteFile();
     ExplorePath();
@@ -216,12 +278,49 @@ VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
   }
   return event;
 }
-VimktorErr_t ExploreWindow::WriteFile() { return VIMKTOR_OK; }
+VimktorErr_t ExploreWindow::WriteFile() {
+  std::fstream file;
+  file.open(m_filename, std::ios::out);
+  if (!file.good()) {
+    return FILE_ERROR;
+  }
+  m_sequence->WriteFile(file);
+  file.close();
+
+  return VIMKTOR_OK;
+}
 VimktorErr_t ExploreWindow::LoadFile(const std::string &fileName) {
+  if (fileName == ".") {
+    ExplorePath();
+    return VIMKTOR_OK;
+  }
+  std::fstream file;
+  m_filename = fileName;
+  file.open(fileName, std::ios::in);
+  if (!file.good()) {
+    file.close();
+    file.open(m_filename, std::ios::out | std::ios::in | std::fstream::trunc);
+    return FILE_ERROR;
+  }
+  Debug::Log("plik zapisu: " + m_filename);
+  m_sequence->LoadFile(file);
+  file.close();
+  return VIMKTOR_OK;
   return VIMKTOR_OK;
 }
 VimktorErr_t ExploreWindow::WriteFile(const std::string &fileName) {
   return VIMKTOR_OK;
+}
+VimktorEvent_t Window::HandleWindowMenu() {
+
+  char16_t ch;
+  VimktorEvent_t event = EV_NONE;
+  nodelay(m_window, 0);
+  ch = wgetch(m_window);
+  nodelay(m_window, 1);
+  if(ch == 'l')return EV_CHANGE_WINDOW_RIGHT;
+  if(ch == 'h')return EV_CHANGE_WINDOW_LEFT;
+  return event;
 }
 VimktorEvent_t Window::HandleCommands() {
   std::string cmd;
@@ -263,6 +362,11 @@ VimktorEvent_t Window::HandleCommands() {
 
 VimktorErr_t ExploreWindow::ExplorePath(const std::string &path_str) {
   // TODO: Implement path string exploration
+  m_sequence->m_cursorPos = position_t(0, 0);
+  m_mode = FILES;
+  HelperLog(std::filesystem::current_path().string());
+  m_sequence->LoadCurrentDirectory();
+  return VIMKTOR_OK;
   return VIMKTOR_OK;
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include "vimktor_debug.h"
 #include <cstdint>
 #include <expected>
 #include <fstream>
@@ -123,6 +124,8 @@ public:
   inline const position_t &GetCursorPos() const noexcept { return m_cursorPos; }
   const position_t GetRelativeCursorPos() noexcept {
     auto temp = m_cursorPos;
+    Debug::Log(std::format("pos: {} , page_pos: {}", (std::string)temp,
+                           (std::string)m_pagePos));
     return (temp - m_pagePos);
   }
 

@@ -73,6 +73,9 @@ typedef struct positionStruct {
 } position_t;
 
 enum VimktorEvent_t {
+  EV_CHANGE_WINDOW_MENU,
+  EV_CHANGE_WINDOW_LEFT,
+  EV_CHANGE_WINDOW_RIGHT,
   EV_CURSOR_UP,
   EV_CURSOR_DOWN,
   EV_CURSOR_LEFT,
@@ -100,11 +103,66 @@ enum VimktorEvent_t {
   EV_NEW_WINDOW_VERTICAL,
 };
 
+constexpr std::string_view VimktorEventToString(VimktorEvent_t event) {
+  switch (event) {
+  case EV_CURSOR_UP:
+    return "EV_CURSOR_UP";
+  case EV_CURSOR_DOWN:
+    return "EV_CURSOR_DOWN";
+  case EV_CURSOR_LEFT:
+    return "EV_CURSOR_LEFT";
+  case EV_CURSOR_RIGHT:
+    return "EV_CURSOR_RIGHT";
+  case EV_ADD_LETTER:
+    return "EV_ADD_LETTER";
+  case EV_NONE:
+    return "EV_NONE";
+  case EV_CLOSE:
+    return "EV_CLOSE";
+  case EV_GO_TO_EOL:
+    return "EV_GO_TO_EOL";
+  case EV_GO_TO_SOL:
+    return "EV_GO_TO_SOL";
+  case EV_GO_TO_POS:
+    return "EV_GO_TO_POS";
+  case EV_MODE_INSERT:
+    return "EV_MODE_INSERT";
+  case EV_MODE_INSERT_RIGHT:
+    return "EV_MODE_INSERT_RIGHT";
+  case EV_MODE_NORMAL:
+    return "EV_MODE_NORMAL";
+  case EV_INSERT_TEXT:
+    return "EV_INSERT_TEXT";
+  case EV_BACKSPACE:
+    return "EV_BACKSPACE";
+  case EV_ERASE_LINE:
+    return "EV_ERASE_LINE";
+  case EV_SAVE_FILE:
+    return "EV_SAVE_FILE";
+  case EV_NEW_LINE:
+    return "EV_NEW_LINE";
+  case EV_GET_COMMAND:
+    return "EV_GET_COMMAND";
+  case EV_GO_TO_NEXT_WORD:
+    return "EV_GO_TO_NEXT_WORD";
+  case EV_FILE_EXPLORER:
+    return "EV_FILE_EXPLORER";
+  case EV_ENTER_CURSOR_DIRECTORY:
+    return "EV_ENTER_CURSOR_DIRECTORY";
+  case EV_COLAB:
+    return "EV_COLAB";
+  case EV_NEW_WINDOW_HORIZONTAL:
+    return "EV_NEW_WINDOW_HORIZONTAL";
+  case EV_NEW_WINDOW_VERTICAL:
+    return "EV_NEW_WINDOW_VERTICAL";
+  default:
+    return "UNKNOWN_EVENT";
+  }
+}
+
 typedef std::unordered_map<std::string, VimktorEvent_t> CommandList_t;
 const CommandList_t commandList = {
-    {"w", EV_SAVE_FILE},
-    {"Explore", EV_FILE_EXPLORER},
-    {"q", EV_CLOSE},
-    {"ala", EV_NEW_WINDOW_HORIZONTAL},
+    {"w", EV_SAVE_FILE}, {"Explore", EV_FILE_EXPLORER},
+    {"q", EV_CLOSE},     {"ala", EV_NEW_WINDOW_HORIZONTAL},
     {"Colab", EV_COLAB},
 };

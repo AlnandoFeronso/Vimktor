@@ -160,7 +160,9 @@ void Sequence::ManageLastPos(position_t &backUp) {
     // jezeli jestesmy w tej samej lini
 
     if (m_cursorPos.x >= LineSize(m_cursorPos.y) && m_cursorPos.x != 0) {
-      m_cursorPos.x = LineSize(m_cursorPos.y) - 1;
+      size_t currentLineLen = LineSize(m_cursorPos.y);
+      m_cursorPos.x = (currentLineLen > 0) ? currentLineLen - 1 : 0;
+      // m_cursorPos.x = LineSize(m_cursorPos.y) - 1;
     }
     m_cursorPosPrev.x = m_cursorPos.x;
   } else {
@@ -297,12 +299,15 @@ VimktorErr_t Sequence::CursorMoveEol() {
   // TODO: fix page positioning
   Debug::Log(std::format("x{} , line size {}", m_cursorPos.x,
                          LineSize(m_cursorPos.y)));
+  CursorManagePagePos();
   return VIMKTOR_OK;
 }
 
 VimktorErr_t Sequence::CursorMoveSol() {
+  auto backUp = m_cursorPos;
   m_cursorPos.x = 0;
-
+  ManageLastPos(backUp);
+  CursorManagePagePos();
   return VIMKTOR_OK;
 }
 
@@ -334,27 +339,22 @@ VimktorErr_t Sequence::CursorManagePagePos() {
   if (m_cursorPos.x < m_pagePos.x) {
     m_pagePos.x = m_cursorPos.x;
   } else if (m_cursorPos.x >= m_pagePos.x + m_pageWidth) {
-    // Cursor moved right beyond visible area
-    m_pagePos.x = m_cursorPos.x - m_pageWidth;
+    // Dajemy +1, aby kursor znalazł się na ostatniej WIDOCZNEJ kolumnie
+    m_pagePos.x = m_cursorPos.x - m_pageWidth + 1;
   }
 
-  // Handle vertical scrolling
+  // To samo musisz naprawić dla przewijania pionowego!
   if (m_cursorPos.y < m_pagePos.y) {
-    // Cursor moved up beyond visible area
     m_pagePos.y = m_cursorPos.y;
   } else if (m_cursorPos.y >= m_pagePos.y + m_pageHeight) {
-    // Cursor moved down beyond visible area
-    m_pagePos.y = m_cursorPos.y - m_pageHeight;
+    // Dajemy +1, aby kursor znalazł się w ostatnim WIDOCZNYM wierszu
+    m_pagePos.y = m_cursorPos.y - m_pageHeight + 1;
   }
 
-  // Ensure page position doesn't go negative
   if (m_pagePos.x < 0)
     m_pagePos.x = 0;
   if (m_pagePos.y < 0)
     m_pagePos.y = 0;
-
-  // Ensure page position doesn't exceed content bounds
-  // You might want to add maximum x bounds based on your longest line
 
   Debug::Log(std::format("page x{}, page y{}", m_pagePos.x, m_pagePos.y));
   return VIMKTOR_OK;
