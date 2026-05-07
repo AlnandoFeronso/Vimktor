@@ -85,7 +85,9 @@ VimktorErr_t Window::Resize() {
   if (m_window != stdscr) {
     delwin(m_window);
   }
+
   m_window = newwin(y, x, m_position.y, m_position.x);
+  m_sequence->SetPageDimensions(x - LINE_NUM_WIDTH, y - HELPER_HEIGHT);
   return VIMKTOR_OK;
 }
 VimktorErr_t Window::Resize(const position_t &dim) {
@@ -93,6 +95,7 @@ VimktorErr_t Window::Resize(const position_t &dim) {
     delwin(m_window);
   }
   m_window = newwin(dim.y, dim.x, m_position.y, m_position.x);
+  m_sequence->SetPageDimensions(dim.x - LINE_NUM_WIDTH, dim.y - HELPER_HEIGHT);
   return VIMKTOR_OK;
 }
 
@@ -141,6 +144,7 @@ VimktorErr_t Window::RenderLineNumber() {
 
 VimktorErr_t Window::RenderCursor() {
   position_t cursor = m_sequence->GetRelativeCursorPos();
+  Debug::Log(std::format("PATRYK: {}", (std::string)cursor));
   wmove(m_window, cursor.y, cursor.x + LINE_NUM_WIDTH);
 
   return VIMKTOR_OK;
@@ -198,7 +202,7 @@ VimktorErr_t ExploreWindow::ExplorePath() {
   return VIMKTOR_OK;
 }
 
-VimktorEvent_t ExploreWindow::HandleInput() {
+VimktorEvent_t Window::HandleInput() {
   VimktorEvent_t event = InputManager::Get().GetEvent(m_window, m_mode);
   event = HandleEvents(event);
 
@@ -230,7 +234,7 @@ VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
   case EV_MODE_NORMAL:
     m_mode = NORMAL;
     break;
-  
+
   case EV_MODE_INSERT:
     m_mode = INSERT;
     break;
@@ -306,20 +310,18 @@ VimktorErr_t ExploreWindow::LoadFile(const std::string &fileName) {
   m_sequence->LoadFile(file);
   file.close();
   return VIMKTOR_OK;
-  return VIMKTOR_OK;
 }
 VimktorErr_t ExploreWindow::WriteFile(const std::string &fileName) {
   return VIMKTOR_OK;
 }
 VimktorEvent_t Window::HandleWindowMenu() {
-
   char16_t ch;
   VimktorEvent_t event = EV_NONE;
-  nodelay(m_window, 0);
   ch = wgetch(m_window);
-  nodelay(m_window, 1);
-  if(ch == 'l')return EV_CHANGE_WINDOW_RIGHT;
-  if(ch == 'h')return EV_CHANGE_WINDOW_LEFT;
+  if (ch == 'l')
+    return EV_CHANGE_WINDOW_RIGHT;
+  if (ch == 'h')
+    return EV_CHANGE_WINDOW_LEFT;
   return event;
 }
 VimktorEvent_t Window::HandleCommands() {
@@ -341,7 +343,6 @@ VimktorEvent_t Window::HandleCommands() {
     if (ch == KEY_BACKSPACE) {
       if (cmd.size() > 0)
         cmd.pop_back();
-
     } else {
       cmd.push_back(ch);
     }
@@ -384,3 +385,5 @@ VimktorErr_t ExploreWindow::OpenFileCursor() {
   }
   return VIMKTOR_OK;
 }
+
+

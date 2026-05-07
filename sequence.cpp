@@ -279,6 +279,8 @@ void Sequence::AddNewLineCursor() {
   CursorMove(DOWN);
 }
 
+	void Sequence::ReplaceCharCursor(const glyph_t & gl){}
+
 void Sequence::EraseLineCursor() {
   auto itr = data.begin() + m_cursorPos.y;
   if (data.size() == 1) {
@@ -311,6 +313,7 @@ VimktorErr_t Sequence::CursorMoveSol() {
   return VIMKTOR_OK;
 }
 
+
 VimktorErr_t Sequence::CursorMoveWordNext() {
   auto itr =
       GetLineAtCursor().begin() + m_cursorPos.x; // current letter nder cursor
@@ -339,15 +342,12 @@ VimktorErr_t Sequence::CursorManagePagePos() {
   if (m_cursorPos.x < m_pagePos.x) {
     m_pagePos.x = m_cursorPos.x;
   } else if (m_cursorPos.x >= m_pagePos.x + m_pageWidth) {
-    // Dajemy +1, aby kursor znalazł się na ostatniej WIDOCZNEJ kolumnie
     m_pagePos.x = m_cursorPos.x - m_pageWidth + 1;
   }
 
-  // To samo musisz naprawić dla przewijania pionowego!
   if (m_cursorPos.y < m_pagePos.y) {
     m_pagePos.y = m_cursorPos.y;
   } else if (m_cursorPos.y >= m_pagePos.y + m_pageHeight) {
-    // Dajemy +1, aby kursor znalazł się w ostatnim WIDOCZNYM wierszu
     m_pagePos.y = m_cursorPos.y - m_pageHeight + 1;
   }
 
@@ -372,4 +372,100 @@ VimktorErr_t Sequence::LoadCurrentDirectory() {
     AddLine(dir.path().filename());
   }
   return VIMKTOR_OK;
+}
+
+#include "include/colab.h"
+#include <sys/socket.h>
+
+
+void SequenceCollab::AddNewLineCursor() {
+  int32_t y = m_cursorPos.y; // Zapisujemy z której linii robimy Enter
+
+  Sequence::AddNewLineCursor(); // Lokalna zmiana[cite: 1]
+
+  if (m_socket != -1) {
+    CollabMessage msg;
+    msg.type = OP_NEWLINE;
+    msg.x = 0;
+    msg.y = y;
+    msg.ch = 0;
+    send(m_socket, &msg, sizeof(msg), MSG_NOSIGNAL);
+  }
+}
+
+void SequenceCollab::EraseLineCursor() {
+  int32_t y = m_cursorPos.y;
+
+  Sequence::EraseLineCursor();
+
+  if (m_socket != -1) {
+    CollabMessage msg;
+    msg.type = OP_ERASE_LINE;
+    msg.x = 0;
+    msg.y = y;
+    msg.ch = 0;
+    send(m_socket, &msg, sizeof(msg), MSG_NOSIGNAL);
+  }
+}
+
+void SequenceCollab::ReplaceCharCursor(const glyph_t &gl) {
+  int32_t x = m_cursorPos.x;
+  int32_t y = m_cursorPos.y;
+
+ // Sequence::ReplaceCharCursor(gl); // Lokalna zmiana
+
+  if (m_socket != -1) {
+    CollabMessage msg;
+    msg.type = OP_REPLACE;
+    msg.x = x;
+    msg.y = y;
+    msg.ch = (uint32_t)gl.ch;
+    send(m_socket, &msg, sizeof(msg), MSG_NOSIGNAL);
+  }
+}
+
+void SequenceCollab::ApplyRemoteNewLine(int32_t y) {
+  if (y < 0 || y >= data.size())
+    return;
+
+  auto itr = data.begin() + y + 1;
+  std::vector<glyph_t> new_line;
+  new_line.reserve(DEFAULT_LINE_LENGTH);
+  data.insert(itr, std::move(new_line));
+
+  if (m_cursorPos.y > y) {
+    m_cursorPos.y++;
+  }
+}
+
+void SequenceCollab::ApplyRemoteEraseLine(int32_t y) {
+  if (y < 0 || y >= data.size())
+    return;
+
+  auto itr = data.begin() + y;
+  if (data.size() == 1) {
+    itr->clear(); // Nie usuwamy ostatniej linii, tylko ją czyścimy[cite: 1]
+  } else {
+    data.erase(itr);
+  }
+
+  // Fix: Zarządzanie kursorem po usunięciu linii przez kogoś innego
+  if (m_cursorPos.y > y) {
+    m_cursorPos.y--; // Zsuwamy nasz kursor do góry
+  } else if (m_cursorPos.y == y) {
+    m_cursorPos.x =
+        0; // Jeśli ktoś skasował linię w której byliśmy, lądujemy na początku
+    if (m_cursorPos.y >= data.size()) {
+      m_cursorPos.y = data.size() - 1; // Zabezpieczenie przed EOF
+    }
+  }
+}
+
+void SequenceCollab::ApplyRemoteReplace(int32_t x, int32_t y, uint32_t ch) {
+  if (y < 0 || y >= data.size())
+    return;
+  if (x < 0 || x >= data[y].size())
+    return;
+
+  data[y][x] = glyph_t(ch);
 }

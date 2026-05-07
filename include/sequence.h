@@ -50,6 +50,7 @@ class Sequence {
 public:
   Sequence() = default;
   Sequence(std::fstream &file);
+  virtual ~Sequence() = default; // Polimorficzny destruktor
 
   VimktorErr_t LoadFile(std::fstream &file);
   VimktorErr_t WriteFile(std::fstream &file);
@@ -58,9 +59,7 @@ public:
   inline void Reserve(size_t n) { data.reserve(n); }
 
   std::expected<glyph_t *, VimktorErr_t> GetGlyphAt(size_t col, size_t line);
-  std::expected<glyph_t *, VimktorErr_t>
-  GetGlyphAtRel(size_t col,
-                size_t line); // relative , you dont need to consider pageOffset
+  std::expected<glyph_t *, VimktorErr_t> GetGlyphAtRel(size_t col, size_t line);
 
   void AddGlyphAt(size_t col, size_t line, glyph_t glyph);
 
@@ -68,12 +67,10 @@ public:
     m_pageWidth = pos.x;
     m_pageHeight = pos.y;
   }
-
   inline void SetPageDimensions(size_t pageWidth, size_t pageHeight) {
     m_pageWidth = pageWidth;
     m_pageHeight = pageHeight;
   }
-
   inline position_t GetPageDimensions() {
     return position_t(m_pageWidth, m_pageHeight);
   }
@@ -83,32 +80,27 @@ public:
   std::vector<glyph_t> &operator[](size_t line);
 
   std::string GetStringAt(size_t line);
-
   std::string GetStringCursor();
+
   inline const size_t LineSize(size_t line) {
     if (m_mode == INSERT)
       return data.at(line).size() + 1;
     return data.at(line).size();
   }
+
   void AddLine(const std::string &str);
   void SetLineTo(size_t line, const std::string &str);
-
   void AddCharTo(const position_t &pos);
-
   VimktorErr_t LoadCurrentDirectory();
-  /*
-------Cursor Text Editing-------
-*/
-  void InsertCharCursor(const glyph_t &gl); // insserts char in cursros position
-  void ReplaceCharCursor(const glyph_t &gl); // replaces char in cursros
-                                             // position cursor
-  void AddNewLineCursor();
-  void EraseCharCursor();
-  void EraseLineCursor();
 
-  /*
-          ------Cursor Movement--------
-  */
+  /* ------Cursor Text Editing------- */
+  virtual void InsertCharCursor(const glyph_t &gl);
+  virtual void ReplaceCharCursor(const glyph_t &gl);
+  virtual void AddNewLineCursor();
+  virtual void EraseCharCursor();
+  virtual void EraseLineCursor();
+
+  /* ------Cursor Movement-------- */
   VimktorErr_t CursorMove(CursorDirection dir);
   VimktorErr_t CursorMovePos(const position_t &pos);
   VimktorErr_t CursorMovePos(const position_t &&pos);
@@ -121,117 +113,45 @@ public:
   VimktorErr_t CursorMoveWordBeginSeperators();
   VimktorErr_t CursorMoveWordEndSeperators();
   void ManageLastPos(position_t &backUp);
+
   inline const position_t &GetCursorPos() const noexcept { return m_cursorPos; }
   const position_t GetRelativeCursorPos() noexcept {
     auto temp = m_cursorPos;
-    Debug::Log(std::format("pos: {} , page_pos: {}", (std::string)temp,
-                           (std::string)m_pagePos));
     return (temp - m_pagePos);
   }
 
   position_t m_cursorPos;
-  position_t m_cursorPosPrev; // this determines how much cursors should be
-                              // offested after changin line
+  position_t m_cursorPosPrev;
   position_t m_pagePos;
   VimktorMode_t m_mode;
 
-private:
+protected:
   size_t m_pageWidth;
   size_t m_pageHeight;
   VimktorErr_t CursorPosValid();
   std::vector<std::vector<glyph_t>> data;
 };
 
-class SequenceCollab {
+class SequenceCollab : public Sequence {
 public:
   SequenceCollab() = default;
-  SequenceCollab(std::fstream &file);
+  SequenceCollab(std::fstream &file) : Sequence(file) {}
 
-  VimktorErr_t LoadFile(std::fstream &file);
-  VimktorErr_t WriteFile(std::fstream &file);
+  void InsertCharCursor(const glyph_t &gl) override;
+  void EraseCharCursor() override;
+  void AddNewLineCursor() override;
+  void EraseLineCursor() override;
+  void ReplaceCharCursor(const glyph_t &gl) override;
 
-  inline const size_t Size() { return data.size(); }
-  inline void Reserve(size_t n) { data.reserve(n); }
-
-  std::expected<glyph_t *, VimktorErr_t> GetGlyphAt(size_t col, size_t line);
-  std::expected<glyph_t *, VimktorErr_t>
-  GetGlyphAtRel(size_t col,
-                size_t line); // relative , you dont need to consider pageOffset
-
-  void AddGlyphAt(size_t col, size_t line, glyph_t glyph);
-
-  inline void SetPageDimensions(const position_t &pos) {
-    m_pageWidth = pos.x;
-    m_pageHeight = pos.y;
-  }
-
-  inline void SetPageDimensions(size_t pageWidth, size_t pageHeight) {
-    m_pageWidth = pageWidth;
-    m_pageHeight = pageHeight;
-  }
-
-  inline position_t GetPageDimensions() {
-    return position_t(m_pageWidth, m_pageHeight);
-  }
-
-  std::vector<glyph_t> &GetLineAt(size_t line);
-  std::vector<glyph_t> &GetLineAtCursor();
-  std::vector<glyph_t> &operator[](size_t line);
-
-  std::string GetStringAt(size_t line);
-
-  std::string GetStringCursor();
-  inline const size_t LineSize(size_t line) {
-    if (m_mode == INSERT)
-      return data.at(line).size() + 1;
-    return data.at(line).size();
-  }
-  void AddLine(const std::string &str);
-  void SetLineTo(size_t line, const std::string &str);
-
-  void AddCharTo(const position_t &pos);
-
-  VimktorErr_t LoadCurrentDirectory();
-  /*
-------Cursor Text Editing-------
-*/
-  void InsertCharCursor(const glyph_t &gl); // insserts char in cursros position
-  void ReplaceCharCursor(const glyph_t &gl); // replaces char in cursros
-                                             // position cursor
-  void AddNewLineCursor();
-  void EraseCharCursor();
-  void EraseLineCursor();
-
-  /*
-          ------Cursor Movement--------
-  */
-  VimktorErr_t CursorMove(CursorDirection dir);
-  VimktorErr_t CursorMovePos(const position_t &pos);
-  VimktorErr_t CursorMovePos(const position_t &&pos);
-  VimktorErr_t CursorChangeLine(CursorDirection dir);
-  VimktorErr_t CursorMoveEol();
-  VimktorErr_t CursorMoveSol();
-  VimktorErr_t CursorManagePagePos();
-  VimktorErr_t CursorMoveWordNext();
-  VimktorErr_t CursorMoveWordEnd();
-  VimktorErr_t CursorMoveWordBeginSeperators();
-  VimktorErr_t CursorMoveWordEndSeperators();
-  void ManageLastPos(position_t &backUp);
-  inline const position_t &GetCursorPos() const noexcept { return m_cursorPos; }
-  const position_t GetRelativeCursorPos() noexcept {
-    auto temp = m_cursorPos;
-    return (temp - m_pagePos);
-  }
-
-  position_t m_cursorPos;
-  position_t m_cursorPosPrev; // this determines how much cursors should be
-                              // offested after changin line
-  position_t m_pagePos;
-  VimktorMode_t m_mode;
+  void SetSocket(int fd) { m_socket = fd; }
+  int GetSocket() const { return m_socket; }
+  
+  void ApplyRemoteInsert(int32_t x, int32_t y, uint32_t ch);
+  void ApplyRemoteDelete(int32_t x, int32_t y);
+  void ApplyRemoteReplace(int32_t x, int32_t y, uint32_t ch);
+  void ApplyRemoteNewLine(int32_t y);
+  void ApplyRemoteEraseLine(int32_t y);
 
 private:
-  size_t m_pageWidth;
-  size_t m_pageHeight;
-  VimktorErr_t CursorPosValid();
-  std::vector<std::vector<glyph_t>> data;
+  int m_socket = -1;
 };

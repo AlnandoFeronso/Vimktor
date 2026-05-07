@@ -34,9 +34,8 @@ VimktorErr_t Vimktor::NewWindowHorizontal(std::unique_ptr<Window> &&win) {
   auto pos_prev = m_current_window->get()->GetWindowPosition();
   pos_prev.x++; // trick to assure that widow will be right next
   win.get()->SetWindowPosition(pos_prev);
-
+  win->ChangeHeight(m_current_window->get()->GetWindowDimensions().y);
   auto ptr = win.get();
-
   size_t align = 0;
   m_windows.push_back(std::move(win));
 
@@ -59,11 +58,14 @@ VimktorErr_t Vimktor::NewWindowHorizontal(std::unique_ptr<Window> &&win) {
 
   position_t temp(0, 0);
   for (auto &el : m_windows) {
-    el->MoveX(pos_prev.x);
+    el->MoveX(temp.x);
     el.get()->ChangeWidth(new_width);
     el.get()->Render();
-    //    el->MoveAndResize({}, {});
-    pos_prev.x += new_width;
+    temp.x += new_width;
+
+    Debug::Log(std::format("TO SA WYMIARY: {} A TO POZYCJA: {}",
+                           (std::string)el->GetWindowDimensions(),
+                           (std::string)el->GetWindowPosition()));
   }
 
   for (auto start = m_windows.begin(); start != m_windows.end(); start++) {
@@ -114,6 +116,13 @@ VimktorErr_t Vimktor::ChangeWindowLeft() {
 VimktorErr_t Vimktor::RenderWindow() {
   if (m_current_window == m_windows.end() || m_windows.empty())
     return VimktorErr_t::MEMORY_ERROR;
+  for (auto &win : m_windows) {
+    if (win != *m_current_window) {
+      win->Render();
+    }
+  }
+
+  m_current_window->get()->Render();
   m_current_window->get()->Render();
   return VIMKTOR_OK;
 }
@@ -295,6 +304,9 @@ VimktorErr_t Vimktor::HandleEvents() {
     break;
   case EV_NEW_WINDOW_HORIZONTAL:
     NewWindowHorizontal(std::make_unique<ExploreWindow>());
+    break;
+  case EV_ENTER_CURSOR_DIRECTORY:
+	
     break;
   case EV_CLOSE:
     Debug::Log(std::format(" NIE WIEM {}", m_windows.size()));

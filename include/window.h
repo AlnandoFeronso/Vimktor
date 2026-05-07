@@ -10,8 +10,9 @@ public:
   Window()
       : m_window(stdscr), m_position(position_t(0, 0)),
         m_sequence(std::make_unique<Sequence>()) {
-		m_sequence->SetPageDimensions(getmaxx(stdscr)-LINE_NUM_WIDTH,getmaxy(stdscr)-HELPER_HEIGHT);
-	}
+    m_sequence->SetPageDimensions(getmaxx(stdscr) - LINE_NUM_WIDTH,
+                                  getmaxy(stdscr) - HELPER_HEIGHT);
+  }
   virtual ~Window();
   virtual VimktorErr_t Render();
   // TODO: ALL RESIZES ETC
@@ -49,7 +50,7 @@ public:
   virtual std::string GetFileName() const;
   std::string GetModeStr() const;
   VimktorEvent_t GetCurrentEvent() const { return m_current_event; };
-  virtual VimktorEvent_t HandleInput() = 0;
+  virtual VimktorEvent_t HandleInput();
   virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) = 0;
   virtual VimktorEvent_t HandleCommands();
   virtual VimktorEvent_t HandleWindowMenu();
@@ -68,7 +69,6 @@ public:
   ExploreWindow(Window *parent, const size_t width, const size_t height);
   ExploreWindow(const size_t width, const size_t height);
   virtual ~ExploreWindow() = default;
-  virtual VimktorEvent_t HandleInput() override;
   virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) override;
   virtual VimktorErr_t LoadFile(const std::string &fileName) override;
   virtual VimktorErr_t WriteFile(const std::string &fileName) override;
@@ -87,6 +87,14 @@ public:
   EditorWindow(const std::string &fileName);
   EditorWindow();
   VimktorErr_t Render() override;
+  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) = 0;
+  virtual VimktorEvent_t HandleCommands();
+  virtual VimktorEvent_t HandleWindowMenu();
+
+  virtual VimktorErr_t OpenFileCursor() = 0;
+  virtual VimktorErr_t LoadFile(const std::string &fileName) = 0;
+  virtual VimktorErr_t WriteFile(const std::string &fileName) = 0;
+  virtual VimktorErr_t WriteFile() = 0;
 
 public:
   VimktorErr_t RenderLineNumber();
