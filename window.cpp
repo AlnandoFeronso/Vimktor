@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <ncurses.h>
 #include <string>
+#include <sys/types.h>
 
 std::string Window::GetFileName() const { return "None"; }
 
@@ -22,6 +23,33 @@ VimktorErr_t Window::Render() {
   RenderHelper();
   RenderCursor();
   wrefresh(m_window);
+  return VIMKTOR_OK;
+}
+
+VimktorErr_t Window::ExplorePath() {
+  HelperLog("cannot explore in " + GetModeStr());
+  return VimktorErr_t::INVALID_ARRGUMENT;
+}
+VimktorErr_t Window::ExplorePath(const std::string &path_str) {
+  HelperLog("cannot explore in " + GetModeStr());
+  return VimktorErr_t::INVALID_ARRGUMENT;
+}
+VimktorErr_t Window::OpenFileCursor() {
+  HelperLog("cannot explore in " + GetModeStr());
+  return VimktorErr_t::INVALID_ARRGUMENT;
+}
+VimktorErr_t Window::LoadFile(const std::string &fileName) {
+
+  std::fstream file;
+  m_filename = fileName;
+  file.open(fileName, std::ios::in);
+  if (!file.good()) {
+    file.close();
+    file.open(m_filename, std::ios::out | std::ios::in | std::fstream::trunc);
+    return FILE_ERROR;
+  }
+  m_sequence->LoadFile(file);
+  file.close();
   return VIMKTOR_OK;
 }
 
@@ -209,7 +237,8 @@ VimktorEvent_t Window::HandleInput() {
   return event;
 }
 
-VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
+VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t ev) {
+  static VimktorEvent_t event = ev;
   switch (event) {
   case EV_NONE:
     break;
@@ -232,11 +261,8 @@ VimktorEvent_t ExploreWindow::HandleEvents(VimktorEvent_t event) {
     m_sequence->EraseLineCursor();
     break;
   case EV_MODE_NORMAL:
-    m_mode = NORMAL;
     break;
-
   case EV_MODE_INSERT:
-    m_mode = INSERT;
     break;
   case EV_MODE_INSERT_RIGHT:
     m_mode = INSERT;
@@ -368,7 +394,6 @@ VimktorErr_t ExploreWindow::ExplorePath(const std::string &path_str) {
   HelperLog(std::filesystem::current_path().string());
   m_sequence->LoadCurrentDirectory();
   return VIMKTOR_OK;
-  return VIMKTOR_OK;
 }
 
 VimktorErr_t ExploreWindow::OpenFileCursor() {
@@ -380,10 +405,41 @@ VimktorErr_t ExploreWindow::OpenFileCursor() {
       m_sequence->GetStringCursor() == "./") {
     ExplorePath(path_str);
   } else {
-    LoadFile(m_sequence->GetStringCursor());
-    m_mode = NORMAL;
+    HandleEvents(EV_OPEN_EDITOR);
   }
   return VIMKTOR_OK;
 }
 
+EditorWindow::EditorWindow(Window *parent, const size_t width,
+                           const size_t height) {}
+EditorWindow::EditorWindow(const size_t width, const size_t height) {}
+EditorWindow::EditorWindow(const std::string &fileName) {}
+EditorWindow::EditorWindow() {}
+VimktorErr_t EditorWindow::Render() {}
+VimktorEvent_t EditorWindow::HandleEvents(VimktorEvent_t event) {}
+VimktorEvent_t EditorWindow::HandleCommands() {}
+VimktorEvent_t EditorWindow::HandleWindowMenu() {}
 
+VimktorErr_t EditorWindow::OpenFileCursor() {}
+VimktorErr_t EditorWindow::LoadFile(const std::string &fileName) {}
+VimktorErr_t EditorWindow::WriteFile(const std::string &fileName) {}
+VimktorErr_t EditorWindow::WriteFile() {}
+
+void EditorWindow::Init() { m_mode = NORMAL; }
+
+CollabWindow::CollabWindow(Window *parent, const size_t width,
+                           const size_t height) {}
+CollabWindow::CollabWindow(const size_t width, const size_t height) {}
+CollabWindow::CollabWindow(const std::string &fileName) {}
+CollabWindow::CollabWindow() {}
+VimktorErr_t CollabWindow::Render() {}
+VimktorEvent_t CollabWindow::HandleEvents(VimktorEvent_t event) {}
+VimktorEvent_t CollabWindow::HandleCommands() {}
+VimktorEvent_t CollabWindow::HandleWindowMenu() {}
+
+VimktorErr_t CollabWindow::OpenFileCursor() {}
+VimktorErr_t CollabWindow::LoadFile(const std::string &fileName) {}
+VimktorErr_t CollabWindow::WriteFile(const std::string &fileName) {}
+VimktorErr_t CollabWindow::WriteFile() {}
+VimktorErr_t CollabWindow::ExplorePath() {}
+VimktorErr_t CollabWindow::ExplorePath(const std::string &path_str) {}

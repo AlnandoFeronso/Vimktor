@@ -16,6 +16,7 @@ public:
   virtual ~Window();
   virtual VimktorErr_t Render();
   // TODO: ALL RESIZES ETC
+
   VimktorErr_t MoveAndResize(const position_t &pos, const position_t &dim);
   VimktorErr_t Move(const position_t &pos);
   VimktorErr_t MoveX(const size_t x);
@@ -44,8 +45,9 @@ public:
   WINDOW *SplitVertical();                       // DONE
   VimktorErr_t RenderCursor();                   // DONE
   VimktorErr_t RenderLineNumber();               // DONE
-  //  void HelperLog(const std::string &msg);        // DONE
   void HelperLog(std::string_view msg); // DONE
+
+
 
   virtual std::string GetFileName() const;
   std::string GetModeStr() const;
@@ -55,10 +57,10 @@ public:
   virtual VimktorEvent_t HandleCommands();
   virtual VimktorEvent_t HandleWindowMenu();
 
-  virtual VimktorErr_t ExplorePath() = 0;
-  virtual VimktorErr_t ExplorePath(const std::string &path_str) = 0;
-  virtual VimktorErr_t OpenFileCursor() = 0;
-  virtual VimktorErr_t LoadFile(const std::string &fileName) = 0;
+  virtual VimktorErr_t ExplorePath() ;
+  virtual VimktorErr_t ExplorePath(const std::string &path_str) ;
+  virtual VimktorErr_t OpenFileCursor() ;
+  virtual VimktorErr_t LoadFile(const std::string &fileName);
   virtual VimktorErr_t WriteFile(const std::string &fileName) = 0;
   virtual VimktorErr_t WriteFile() = 0;
 };
@@ -87,17 +89,18 @@ public:
   EditorWindow(const std::string &fileName);
   EditorWindow();
   VimktorErr_t Render() override;
-  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event) = 0;
+  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event);
   virtual VimktorEvent_t HandleCommands();
   virtual VimktorEvent_t HandleWindowMenu();
 
-  virtual VimktorErr_t OpenFileCursor() = 0;
-  virtual VimktorErr_t LoadFile(const std::string &fileName) = 0;
-  virtual VimktorErr_t WriteFile(const std::string &fileName) = 0;
-  virtual VimktorErr_t WriteFile() = 0;
+  virtual VimktorErr_t OpenFileCursor();
+  virtual VimktorErr_t LoadFile(const std::string &fileName);
+  virtual VimktorErr_t WriteFile(const std::string &fileName);
+  virtual VimktorErr_t WriteFile();
 
 public:
   VimktorErr_t RenderLineNumber();
+  void Init(); 
 };
 
 class FormWindow : public Window {
@@ -107,4 +110,24 @@ public:
   std::string GetAnswer();
 };
 
-class CollabWindow : public Window {};
+class CollabWindow : public Window {
+public:
+  CollabWindow(Window *parent, const size_t width, const size_t height);
+  CollabWindow(const size_t width, const size_t height);
+  CollabWindow(const std::string &fileName);
+  CollabWindow();
+  VimktorErr_t Render() override;
+  virtual VimktorEvent_t HandleEvents(VimktorEvent_t event);
+  virtual VimktorEvent_t HandleCommands();
+  virtual VimktorEvent_t HandleWindowMenu();
+
+  virtual VimktorErr_t OpenFileCursor();
+  virtual VimktorErr_t LoadFile(const std::string &fileName);
+  virtual VimktorErr_t WriteFile(const std::string &fileName);
+  virtual VimktorErr_t WriteFile();
+  virtual VimktorErr_t ExplorePath();
+  virtual VimktorErr_t ExplorePath(const std::string &path_str);
+
+public:
+  VimktorErr_t RenderLineNumber();
+};

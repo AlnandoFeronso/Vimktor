@@ -23,6 +23,13 @@ enum VimktorErr_t {
 
 enum VimktorMode_t { INSERT, VISUAL, NORMAL, EXIT, FILES };
 
+enum VimktorWindowType_t {
+  COLLAB,
+  EDITOR,
+  EXPLORER,
+  FORM,
+};
+
 enum CursorDirection {
   LEFT,
   RIGHT,
@@ -73,6 +80,8 @@ typedef struct positionStruct {
 } position_t;
 
 enum VimktorEvent_t {
+  EV_OPEN_EDITOR,
+  EV_OPEN_COLAB,
   EV_CHANGE_WINDOW_MENU,
   EV_CHANGE_WINDOW_LEFT,
   EV_CHANGE_WINDOW_RIGHT,

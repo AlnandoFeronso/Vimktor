@@ -306,7 +306,13 @@ VimktorErr_t Vimktor::HandleEvents() {
     NewWindowHorizontal(std::make_unique<ExploreWindow>());
     break;
   case EV_ENTER_CURSOR_DIRECTORY:
-	
+
+    break;
+  case EV_OPEN_EDITOR:
+    ChangeWindowType(EDITOR);
+    break;
+  case EV_OPEN_COLAB:
+    ChangeWindowType(COLLAB);
     break;
   case EV_CLOSE:
     Debug::Log(std::format(" NIE WIEM {}", m_windows.size()));
@@ -337,7 +343,25 @@ void Vimktor::Loop() {
     HandleEvents();
   }
 }
-//
+
+VimktorErr_t Vimktor::ChangeWindowType(VimktorWindowType_t type) {
+
+  std::unique_ptr<Window> new_window;
+
+  if (type == COLLAB) {
+    new_window = std::move(std::make_unique<CollabWindow>());
+  } else if (type == EXPLORER) {
+    new_window = std::move(std::make_unique<ExploreWindow>());
+  } else if (type == EDITOR) {
+    new_window = std::move(std::make_unique<EditorWindow>());
+  }
+
+  Debug::Log(std::format("zmiana na {}", (int)type));
+
+  new_window->HelperLog(std::format("zmiana na {}", (int)type));
+  return VIMKTOR_OK;
+}
+
 // position_t Vimktor::GetEditorDimensions() {
 //   return position_t(getmaxx(m_window), getmaxy(m_window));
 // }

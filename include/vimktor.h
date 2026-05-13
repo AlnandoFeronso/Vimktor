@@ -13,8 +13,6 @@
 #include <tuple>
 #include <unordered_map>
 
-
-
 class Vimktor {
 public:
   typedef std::unordered_map<std::string, VimktorEvent_t> CommandList_t;
@@ -40,6 +38,10 @@ public:
   VimktorErr_t RenderWindow();
   VimktorErr_t ChangeWindowRight();
   VimktorErr_t ChangeWindowLeft();
+
+
+  
+  VimktorErr_t ChangeWindowType(VimktorWindowType_t type);
 
   // colaboration
   VimktorErr_t InitCollab();
